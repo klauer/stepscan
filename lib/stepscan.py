@@ -488,7 +488,6 @@ class StepScan(object):
         for val, pos in zip(orig_positions, self.positioners):
             pos.move_to(val, wait=False)
         self.datafile.write_data(breakpoint=-1, close_file=True, clear=False)
-        self.abort = False
 
         # run post_scan methods
         out = self.post_scan()
@@ -505,5 +504,3 @@ class StepScan(object):
         self.exittime = ts_exit - ts_loop
         self.runtime  = ts_exit - ts_start
         return self.datafile.filename
-        ##
-
