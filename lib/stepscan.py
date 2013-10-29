@@ -171,6 +171,8 @@ class StepScan(object):
         if filename is not None:
             self.datafile = self.open_output_file(filename=filename,
                                                   comments=comments)
+        else:
+            self.datafile = None
 
         self.cpt = 0
         self.npts = 0
@@ -334,6 +336,9 @@ class StepScan(object):
            run pre_scan methods
            Loop over points
            run post_scan methods
+
+        Returns saved filename if set, otherwise returns
+        if the scan was successfully completed or not.
         """
         self.complete = False
         if filename is not None:
@@ -359,11 +364,13 @@ class StepScan(object):
         self.check_outputs(out, msg='move to start')
         self.clear_data()
 
-        self.datafile = self.open_output_file(filename=self.filename,
-                                              comments=self.comments)
+        if self.filename is not None:
+            self.datafile = self.open_output_file(filename=self.filename,
+                                                  comments=self.comments)
 
-        self.datafile.write_data(breakpoint=0)
-        self.filename =  self.datafile.filename
+            self.datafile.write_data(breakpoint=0)
+            self.filename =  self.datafile.filename
+
         if self.debug: print 'StepScan Run (data file opened)'
         out = self.pre_scan()
         self.check_outputs(out, msg='pre scan')
@@ -487,7 +494,9 @@ class StepScan(object):
 
         for val, pos in zip(orig_positions, self.positioners):
             pos.move_to(val, wait=False)
-        self.datafile.write_data(breakpoint=-1, close_file=True, clear=False)
+
+        if self.datafile is not None:
+            self.datafile.write_data(breakpoint=-1, close_file=True, clear=False)
 
         # run post_scan methods
         out = self.post_scan()
@@ -503,4 +512,7 @@ class StepScan(object):
         ts_exit = time.time()
         self.exittime = ts_exit - ts_loop
         self.runtime  = ts_exit - ts_start
-        return self.datafile.filename
+        if self.datafile is not None:
+            return self.datafile.filename
+        else:
+            return self.abort
