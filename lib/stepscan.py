@@ -188,7 +188,8 @@ class StepScan(object):
         self.at_break_methods = []
         self.pre_scan_methods = []
         self.post_scan_methods = []
-        self.pos_actual  = []
+        self.pos_actual = []
+        self.timestamps = []
 
     def open_output_file(self, filename=None, comments=None):
         """opens the output file"""
@@ -206,6 +207,8 @@ class StepScan(object):
 
     def add_counter(self, counter, label=None):
         "add simple counter"
+        if counter is None:
+            return
         if isinstance(counter, (str, unicode)):
             counter = Counter(counter, label)
         if (isinstance(counter, (Counter, DeviceCounter)) and
@@ -215,6 +218,8 @@ class StepScan(object):
 
     def add_trigger(self, trigger, label=None, value=1):
         "add simple detector trigger"
+        if trigger is None:
+            return
         if isinstance(trigger, (str, unicode)):
             trigger = Trigger(trigger, label=label, value=value)
         if (isinstance(trigger, Trigger) and
@@ -313,6 +318,8 @@ class StepScan(object):
         That is, return values must be None or evaluate to False
         to indicate success.
         """
+        if self.debug:
+            print 'Check: %s' % msg
         if any(out):
             raise Warning('error on output: %s' % msg)
 
@@ -399,6 +406,7 @@ class StepScan(object):
             self.message_thread.start()
         self.cpt = 0
         self.npts = npts
+        del self.timestamps[:]
         t0 = time.time()
         out = [p.move_to_start(wait=True) for p in self.positioners]
         self.check_outputs(out, msg='move to start, wait=True')
@@ -425,6 +433,7 @@ class StepScan(object):
                     for d in self.detectors:
                         d.set_dwelltime(self.dwelltime[i])
                 t0 = time.time()
+                self.timestamps.append(t0)
                 mcount = 0
                 while (not all([p.done for p in self.positioners]) and
                        time.time() - t0 < self.pos_maxmove_time):
@@ -484,6 +493,7 @@ class StepScan(object):
             if not point_ok:
                 print 'point messed up... try again?'
                 i -= 1
+                self.timestamps.pop(-1)
 
         # scan complete
         # return to original positions, write data
